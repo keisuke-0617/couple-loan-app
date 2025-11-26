@@ -12,7 +12,7 @@
   <div class="app">
     <header>
       <h1>ふたりの借用ノート</h1>
-      <p>「誰が誰に借りたか」と差し引きがひと目でわかる、2人だけの借用メモ。</p>
+      <p>恵輔と瞳のあいだでの「借りた・返した」が、差し引きで一目で分かるノートです。（利子は10％）</p>
     </header>
 
     <!-- 合計カード -->
@@ -25,9 +25,11 @@
           <div class="chip">利子ルール：元本の 10％ を上乗せ</div>
         </div>
         <div class="summary-values">
-          <div class="summary-pill" id="summary-base">合計（元本）：0 円</div>
-          <div class="summary-pill" id="summary-interest">合計（利子込み）：0 円</div>
-          <div class="summary-pill summary-pill-contrast" id="summary-net">差額（利子込み）：0 円（トントン）</div>
+          <div class="summary-pill" id="summary-borrow">借入合計（利子込み）：0 円</div>
+          <div class="summary-pill" id="summary-repay">返済合計（利子込み）：0 円</div>
+          <div class="summary-pill summary-pill-contrast" id="summary-net">
+            差額（利子込み）：0 円（トントン）
+          </div>
         </div>
       </div>
     </section>
@@ -36,28 +38,44 @@
     <section class="card">
       <form id="record-form">
         <div class="form-grid">
+          <!-- 人物 -->
           <div class="form-group">
-            <label>誰が借りましたか？</label>
+            <label>人物（動いた人）</label>
             <div class="radio-row">
               <label class="radio-inline">
-                <input type="radio" name="borrower" value="me" checked>
-                あなたが借りた
+                <input type="radio" name="person" value="keisuke" checked>
+                恵輔
               </label>
               <label class="radio-inline">
-                <input type="radio" name="borrower" value="partner">
-                相手が借りた
+                <input type="radio" name="person" value="hitomi">
+                瞳
+              </label>
+            </div>
+          </div>
+
+          <!-- 区分（借りた or 返済した） -->
+          <div class="form-group">
+            <label>区分</label>
+            <div class="radio-row">
+              <label class="radio-inline">
+                <input type="radio" name="kind" value="borrow" checked>
+                借りた
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="kind" value="repay">
+                返済した
               </label>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="name">名前・メモ</label>
-            <input type="text" id="name" placeholder="例：デート代、スタバ、家賃など">
+            <label for="name">メモ</label>
+            <input type="text" id="name" placeholder="例：デート代、家賃立て替え、プレゼントなど">
           </div>
 
           <div class="form-group">
-            <label for="amount">金額（円）</label>
-            <input type="number" id="amount" min="0" step="1" placeholder="例：3000">
+            <label for="amount">金額（元本・円）</label>
+            <input type="number" id="amount" min="0" step="1" placeholder="例：10000">
           </div>
 
           <div class="form-group">
@@ -87,8 +105,9 @@
           <thead>
             <tr>
               <th>日付</th>
-              <th>借りた人</th>
-              <th>名前・メモ</th>
+              <th>人物</th>
+              <th>区分</th>
+              <th>メモ</th>
               <th class="td-number">金額（元本）</th>
               <th class="td-number">利子込み金額</th>
               <th class="td-actions">操作</th>
@@ -99,7 +118,7 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="3">合計</td>
+              <td colspan="4">借入合計 / 返済合計（利子込み）</td>
               <td class="td-number" id="footer-base">0 円</td>
               <td class="td-number" id="footer-interest">0 円</td>
               <td></td>
