@@ -1,6 +1,7 @@
 // 利子の割合（10%）
 const INTEREST_RATE = 0.10;
-const STORAGE_KEY = "couple-loan-records-v2"; // v2 にして旧データと分ける
+// 旧バージョンと分けるためキーを変更
+const STORAGE_KEY = "couple-loan-records-v3";
 
 let form;
 let nameInput;
@@ -8,19 +9,19 @@ let amountInput;
 let dateInput;
 let amountWithInterestInput;
 let recalcBtn;
-let borrowerRadios;
 
 let recordsBody;
 let emptyMessage;
 
-let summaryBase;
-let summaryInterest;
+let summaryBorrow;
+let summaryRepay;
 let summaryNet;
 let footerBase;
 let footerInterest;
 
 let records = [];
 
+// 読み込み
 function loadRecords() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -40,6 +41,7 @@ function loadRecords() {
   }
 }
 
+// 保存
 function saveRecords() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
@@ -48,11 +50,15 @@ function formatYen(value) {
   return value.toLocaleString("ja-JP") + " 円";
 }
 
-function formatBorrower(borrower) {
-  if (borrower === "partner") return "相手が借りた";
-  return "あなたが借りた";
+function labelPerson(person) {
+  return person === "hitomi" ? "瞳" : "恵輔";
 }
 
+function labelKind(kind) {
+  return kind === "repay" ? "返済した" : "借りた";
+}
+
+// 一覧・合計描画
 function renderRecords() {
   recordsBody.innerHTML = "";
 
@@ -62,35 +68,39 @@ function renderRecords() {
     emptyMessage.style.display = "none";
   }
 
-  let totalBase = 0;
-  let totalInterest = 0;
+  let totalBorrowBase = 0;
+  let totalBorrowInterest = 0;
+  let totalRepayBase = 0;
+  let totalRepayInterest = 0;
 
-  let totalBaseMe = 0;
-  let totalBasePartner = 0;
-  let totalInterestMe = 0;
-  let totalInterestPartner = 0;
+  // 恵輔基準の差額（＋なら恵輔が瞳に借りている、−なら瞳が恵輔に借りている）
+  let netInterest = 0;
 
   records.forEach((rec, index) => {
-    const borrower = rec.borrower === "partner" ? "partner" : "me";
-
-    totalBase += rec.amount;
-    totalInterest += rec.amountWithInterest;
-
-    if (borrower === "me") {
-      totalBaseMe += rec.amount;
-      totalInterestMe += rec.amountWithInterest;
+    // 借入・返済の合計（絶対値）
+    if (rec.kind === "borrow") {
+      totalBorrowBase += rec.amount;
+      totalBorrowInterest += rec.amountWithInterest;
     } else {
-      totalBasePartner += rec.amount;
-      totalInterestPartner += rec.amountWithInterest;
+      totalRepayBase += rec.amount;
+      totalRepayInterest += rec.amountWithInterest;
     }
 
+    // 差額計算（恵輔基準）
+    const sign = signedAmountForNet(rec);
+    netInterest += sign;
+
+    // テーブル行生成
     const tr = document.createElement("tr");
 
     const tdDate = document.createElement("td");
     tdDate.textContent = rec.date;
 
-    const tdBorrower = document.createElement("td");
-    tdBorrower.textContent = formatBorrower(borrower);
+    const tdPerson = document.createElement("td");
+    tdPerson.textContent = labelPerson(rec.person);
+
+    const tdKind = document.createElement("td");
+    tdKind.textContent = labelKind(rec.kind);
 
     const tdName = document.createElement("td");
     tdName.textContent = rec.name;
@@ -118,7 +128,8 @@ function renderRecords() {
     tdActions.appendChild(delBtn);
 
     tr.appendChild(tdDate);
-    tr.appendChild(tdBorrower);
+    tr.appendChild(tdPerson);
+    tr.appendChild(tdKind);
     tr.appendChild(tdName);
     tr.appendChild(tdAmount);
     tr.appendChild(tdAmountWithInterest);
@@ -127,32 +138,62 @@ function renderRecords() {
     recordsBody.appendChild(tr);
   });
 
-  // 合計表示（絶対値）
-  summaryBase.textContent = "合計（元本）：" + formatYen(totalBase);
-  summaryInterest.textContent = "合計（利子込み）：" + formatYen(totalInterest);
+  // 合計表示
+  summaryBorrow.textContent =
+    "借入合計（利子込み）：" + formatYen(totalBorrowInterest);
+  summaryRepay.textContent =
+    "返済合計（利子込み）：" + formatYen(totalRepayInterest);
 
-  footerBase.textContent = formatYen(totalBase);
-  footerInterest.textContent = formatYen(totalInterest);
+  // フッターには「借入合計 / 返済合計（元本）」として表示
+  footerBase.textContent =
+    "借入：" +
+    formatYen(totalBorrowBase) +
+    " ／ 返済：" +
+    formatYen(totalRepayBase);
+  footerInterest.textContent =
+    "借入：" +
+    formatYen(totalBorrowInterest) +
+    " ／ 返済：" +
+    formatYen(totalRepayInterest);
 
-  // 差額（利子込み）＝ あなたが借りた − 相手が借りた
-  const netInterest = totalInterestMe - totalInterestPartner;
-  let netLabel;
-
+  // 差額表示（恵輔基準）
+  let netText;
   if (netInterest > 0) {
-    netLabel =
-      "差額（利子込み）：" +
-      formatYen(netInterest) +
-      "（あなたが相手に支払う側）";
-  } else if (netInterest < 0) {
-    netLabel =
+    netText =
       "差額（利子込み）：" +
       formatYen(Math.abs(netInterest)) +
-      "（相手があなたに支払う側）";
+      "（恵輔が瞳に借りている）";
+  } else if (netInterest < 0) {
+    netText =
+      "差額（利子込み）：" +
+      formatYen(Math.abs(netInterest)) +
+      "（瞳が恵輔に借りている）";
   } else {
-    netLabel = "差額（利子込み）：0 円（トントン）";
+    netText = "差額（利子込み）：0 円（トントン）";
   }
+  summaryNet.textContent = netText;
+}
 
-  summaryNet.textContent = netLabel;
+// 差額計算用の符号付き金額
+function signedAmountForNet(rec) {
+  const amt = rec.amountWithInterest;
+  const person = rec.person; // "keisuke" or "hitomi"
+  const kind = rec.kind;     // "borrow" or "repay"
+
+  // 定義：netInterest > 0 なら「恵輔が瞳に借りている」
+  if (person === "keisuke" && kind === "borrow") {
+    return amt; // 恵輔が借入 → 借金増
+  }
+  if (person === "keisuke" && kind === "repay") {
+    return -amt; // 恵輔が返済 → 借金減
+  }
+  if (person === "hitomi" && kind === "borrow") {
+    return -amt; // 瞳が借入 → 恵輔から見て「貸している」のでマイナス
+  }
+  if (person === "hitomi" && kind === "repay") {
+    return amt; // 瞳が返済 → 貸している額が減るのでプラス方向
+  }
+  return 0;
 }
 
 function deleteRecord(index) {
@@ -178,11 +219,14 @@ function addRecord(event) {
   const amount = Number(amountInput.value);
   let date = dateInput.value;
 
-  const borrowerRadio = document.querySelector('input[name="borrower"]:checked');
-  const borrower = borrowerRadio ? borrowerRadio.value : "me";
+  const personRadio = document.querySelector('input[name="person"]:checked');
+  const kindRadio = document.querySelector('input[name="kind"]:checked');
+
+  const person = personRadio ? personRadio.value : "keisuke"; // keisuke / hitomi
+  const kind = kindRadio ? kindRadio.value : "borrow";        // borrow / repay
 
   if (!name) {
-    alert("名前・メモを入力してください。");
+    alert("メモを入力してください。");
     return;
   }
   if (!amount || amount <= 0) {
@@ -205,7 +249,8 @@ function addRecord(event) {
   }
 
   const newRecord = {
-    borrower,              // "me" or "partner"
+    person,              // "keisuke" or "hitomi"
+    kind,                // "borrow" or "repay"
     name,
     amount,
     date,
@@ -220,10 +265,16 @@ function addRecord(event) {
   nameInput.value = "";
   amountInput.value = "";
   amountWithInterestInput.value = "";
-  // 「誰が借りたか」は「あなたが借りた」に戻しておく
-  const meRadio = document.querySelector('input[name="borrower"][value="me"]');
-  if (meRadio) meRadio.checked = true;
-  // 日付はそのままでもOKなのでクリアしない
+
+  // デフォルトを戻す
+  const keisukeRadio = document.querySelector(
+    'input[name="person"][value="keisuke"]'
+  );
+  if (keisukeRadio) keisukeRadio.checked = true;
+  const borrowRadio = document.querySelector(
+    'input[name="kind"][value="borrow"]'
+  );
+  if (borrowRadio) borrowRadio.checked = true;
 }
 
 // 初期化
@@ -235,13 +286,12 @@ document.addEventListener("DOMContentLoaded", () => {
   dateInput = document.getElementById("date");
   amountWithInterestInput = document.getElementById("amountWithInterest");
   recalcBtn = document.getElementById("recalc-btn");
-  borrowerRadios = document.querySelectorAll('input[name="borrower"]');
 
   recordsBody = document.getElementById("records-body");
   emptyMessage = document.getElementById("empty-message");
 
-  summaryBase = document.getElementById("summary-base");
-  summaryInterest = document.getElementById("summary-interest");
+  summaryBorrow = document.getElementById("summary-borrow");
+  summaryRepay = document.getElementById("summary-repay");
   summaryNet = document.getElementById("summary-net");
   footerBase = document.getElementById("footer-base");
   footerInterest = document.getElementById("footer-interest");
