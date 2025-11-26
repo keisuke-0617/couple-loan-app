@@ -12,7 +12,7 @@
   <div class="app">
     <header>
       <h1>ふたりの借用ノート</h1>
-      <p>2人だけの小さな家計・借用メモ。利子はいつでも10％で計算します。</p>
+      <p>「誰が誰に借りたか」と差し引きがひと目でわかる、2人だけの借用メモ。</p>
     </header>
 
     <!-- 合計カード -->
@@ -20,13 +20,14 @@
       <div class="summary-card">
         <div>
           <div class="summary-title">
-            💗 現在の合計
+            💗 現在の状況
           </div>
           <div class="chip">利子ルール：元本の 10％ を上乗せ</div>
         </div>
         <div class="summary-values">
-          <div class="summary-pill" id="summary-base">元本合計：0 円</div>
-          <div class="summary-pill" id="summary-interest">利子込み合計：0 円</div>
+          <div class="summary-pill" id="summary-base">合計（元本）：0 円</div>
+          <div class="summary-pill" id="summary-interest">合計（利子込み）：0 円</div>
+          <div class="summary-pill summary-pill-contrast" id="summary-net">差額（利子込み）：0 円（トントン）</div>
         </div>
       </div>
     </section>
@@ -35,6 +36,20 @@
     <section class="card">
       <form id="record-form">
         <div class="form-grid">
+          <div class="form-group">
+            <label>誰が借りましたか？</label>
+            <div class="radio-row">
+              <label class="radio-inline">
+                <input type="radio" name="borrower" value="me" checked>
+                あなたが借りた
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="borrower" value="partner">
+                相手が借りた
+              </label>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="name">名前・メモ</label>
             <input type="text" id="name" placeholder="例：デート代、スタバ、家賃など">
@@ -72,6 +87,7 @@
           <thead>
             <tr>
               <th>日付</th>
+              <th>借りた人</th>
               <th>名前・メモ</th>
               <th class="td-number">金額（元本）</th>
               <th class="td-number">利子込み金額</th>
@@ -83,7 +99,7 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="2">合計</td>
+              <td colspan="3">合計</td>
               <td class="td-number" id="footer-base">0 円</td>
               <td class="td-number" id="footer-interest">0 円</td>
               <td></td>
