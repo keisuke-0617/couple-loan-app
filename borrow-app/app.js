@@ -5,7 +5,7 @@ const INTEREST_RATE = 0.10;
 
 // ★ここをあなたの実際のURLに変更してください
 // 例: const API_BASE = "https://piaget.hungry.jp/borrow-api";
-const API_BASE = "https://piaget.hungry.jp/borrow-api";
+const API_BASE = "http://piaget.hungry.jp/borrow-api";
 
 // DOM 参照用変数
 let form;
@@ -368,3 +368,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   recalcBtn.addEventListener("click", recalcInterestField);
   form.addEventListener("submit", addRecord);
 });
+
