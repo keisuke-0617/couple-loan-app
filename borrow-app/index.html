@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ふたりの借用ノート</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 外部CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>ふたりの借用ノート</h1>
+      <p>2人だけの小さな家計・借用メモ。利子はいつでも10％で計算します。</p>
+    </header>
+
+    <!-- 合計カード -->
+    <section class="card">
+      <div class="summary-card">
+        <div>
+          <div class="summary-title">
+            💗 現在の合計
+          </div>
+          <div class="chip">利子ルール：元本の 10％ を上乗せ</div>
+        </div>
+        <div class="summary-values">
+          <div class="summary-pill" id="summary-base">元本合計：0 円</div>
+          <div class="summary-pill" id="summary-interest">利子込み合計：0 円</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 入力フォーム -->
+    <section class="card">
+      <form id="record-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">名前・メモ</label>
+            <input type="text" id="name" placeholder="例：デート代、スタバ、家賃など">
+          </div>
+
+          <div class="form-group">
+            <label for="amount">金額（円）</label>
+            <input type="number" id="amount" min="0" step="1" placeholder="例：3000">
+          </div>
+
+          <div class="form-group">
+            <label for="date">日付</label>
+            <input type="date" id="date">
+          </div>
+
+          <div class="form-group">
+            <label for="amountWithInterest">利子込み金額（自動計算：10％上乗せ）</label>
+            <input type="number" id="amountWithInterest" class="readonly" readonly>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn btn-outline" id="recalc-btn">利子を再計算</button>
+          <button type="submit" class="btn btn-primary">
+            ＋ 追加する
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 一覧 -->
+    <section class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>名前・メモ</th>
+              <th class="td-number">金額（元本）</th>
+              <th class="td-number">利子込み金額</th>
+              <th class="td-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="records-body">
+            <!-- レコード行がここに追加される -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2">合計</td>
+              <td class="td-number" id="footer-base">0 円</td>
+              <td class="td-number" id="footer-interest">0 円</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="empty-message" id="empty-message">
+        まだ何も登録されていません。上のフォームから1件追加してみてください。
+      </div>
+    </section>
+  </div>
+
+  <!-- 外部JS -->
+  <script src="app.js"></script>
+</body>
+</html>
