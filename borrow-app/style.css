@@ -92,6 +92,11 @@ header p {
   border: 1px solid var(--border-soft);
 }
 
+.summary-pill-contrast {
+  background: #ffeff7;
+  font-weight: 600;
+}
+
 /* フォーム */
 .form-grid {
   display: grid;
@@ -129,6 +134,25 @@ input:focus {
 
 .readonly {
   background: #fff7fb;
+}
+
+/* ラジオボタン */
+.radio-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.radio-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.radio-inline input[type="radio"] {
+  accent-color: var(--pink-dark);
 }
 
 .button-row {
@@ -184,7 +208,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  min-width: 520px;
+  min-width: 580px;
 }
 
 thead {
