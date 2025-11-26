@@ -1,6 +1,6 @@
 // 利子の割合（10%）
 const INTEREST_RATE = 0.10;
-const STORAGE_KEY = "couple-loan-records-v1";
+const STORAGE_KEY = "couple-loan-records-v2"; // v2 にして旧データと分ける
 
 let form;
 let nameInput;
@@ -8,12 +8,14 @@ let amountInput;
 let dateInput;
 let amountWithInterestInput;
 let recalcBtn;
+let borrowerRadios;
 
 let recordsBody;
 let emptyMessage;
 
 let summaryBase;
 let summaryInterest;
+let summaryNet;
 let footerBase;
 let footerInterest;
 
@@ -46,6 +48,11 @@ function formatYen(value) {
   return value.toLocaleString("ja-JP") + " 円";
 }
 
+function formatBorrower(borrower) {
+  if (borrower === "partner") return "相手が借りた";
+  return "あなたが借りた";
+}
+
 function renderRecords() {
   recordsBody.innerHTML = "";
 
@@ -58,14 +65,32 @@ function renderRecords() {
   let totalBase = 0;
   let totalInterest = 0;
 
+  let totalBaseMe = 0;
+  let totalBasePartner = 0;
+  let totalInterestMe = 0;
+  let totalInterestPartner = 0;
+
   records.forEach((rec, index) => {
+    const borrower = rec.borrower === "partner" ? "partner" : "me";
+
     totalBase += rec.amount;
     totalInterest += rec.amountWithInterest;
+
+    if (borrower === "me") {
+      totalBaseMe += rec.amount;
+      totalInterestMe += rec.amountWithInterest;
+    } else {
+      totalBasePartner += rec.amount;
+      totalInterestPartner += rec.amountWithInterest;
+    }
 
     const tr = document.createElement("tr");
 
     const tdDate = document.createElement("td");
     tdDate.textContent = rec.date;
+
+    const tdBorrower = document.createElement("td");
+    tdBorrower.textContent = formatBorrower(borrower);
 
     const tdName = document.createElement("td");
     tdName.textContent = rec.name;
@@ -93,6 +118,7 @@ function renderRecords() {
     tdActions.appendChild(delBtn);
 
     tr.appendChild(tdDate);
+    tr.appendChild(tdBorrower);
     tr.appendChild(tdName);
     tr.appendChild(tdAmount);
     tr.appendChild(tdAmountWithInterest);
@@ -101,11 +127,32 @@ function renderRecords() {
     recordsBody.appendChild(tr);
   });
 
-  summaryBase.textContent = "元本合計：" + formatYen(totalBase);
-  summaryInterest.textContent = "利子込み合計：" + formatYen(totalInterest);
+  // 合計表示（絶対値）
+  summaryBase.textContent = "合計（元本）：" + formatYen(totalBase);
+  summaryInterest.textContent = "合計（利子込み）：" + formatYen(totalInterest);
 
   footerBase.textContent = formatYen(totalBase);
   footerInterest.textContent = formatYen(totalInterest);
+
+  // 差額（利子込み）＝ あなたが借りた − 相手が借りた
+  const netInterest = totalInterestMe - totalInterestPartner;
+  let netLabel;
+
+  if (netInterest > 0) {
+    netLabel =
+      "差額（利子込み）：" +
+      formatYen(netInterest) +
+      "（あなたが相手に支払う側）";
+  } else if (netInterest < 0) {
+    netLabel =
+      "差額（利子込み）：" +
+      formatYen(Math.abs(netInterest)) +
+      "（相手があなたに支払う側）";
+  } else {
+    netLabel = "差額（利子込み）：0 円（トントン）";
+  }
+
+  summaryNet.textContent = netLabel;
 }
 
 function deleteRecord(index) {
@@ -131,6 +178,9 @@ function addRecord(event) {
   const amount = Number(amountInput.value);
   let date = dateInput.value;
 
+  const borrowerRadio = document.querySelector('input[name="borrower"]:checked');
+  const borrower = borrowerRadio ? borrowerRadio.value : "me";
+
   if (!name) {
     alert("名前・メモを入力してください。");
     return;
@@ -155,6 +205,7 @@ function addRecord(event) {
   }
 
   const newRecord = {
+    borrower,              // "me" or "partner"
     name,
     amount,
     date,
@@ -169,6 +220,9 @@ function addRecord(event) {
   nameInput.value = "";
   amountInput.value = "";
   amountWithInterestInput.value = "";
+  // 「誰が借りたか」は「あなたが借りた」に戻しておく
+  const meRadio = document.querySelector('input[name="borrower"][value="me"]');
+  if (meRadio) meRadio.checked = true;
   // 日付はそのままでもOKなのでクリアしない
 }
 
@@ -181,12 +235,14 @@ document.addEventListener("DOMContentLoaded", () => {
   dateInput = document.getElementById("date");
   amountWithInterestInput = document.getElementById("amountWithInterest");
   recalcBtn = document.getElementById("recalc-btn");
+  borrowerRadios = document.querySelectorAll('input[name="borrower"]');
 
   recordsBody = document.getElementById("records-body");
   emptyMessage = document.getElementById("empty-message");
 
   summaryBase = document.getElementById("summary-base");
   summaryInterest = document.getElementById("summary-interest");
+  summaryNet = document.getElementById("summary-net");
   footerBase = document.getElementById("footer-base");
   footerInterest = document.getElementById("footer-interest");
 
